@@ -1,0 +1,239 @@
+---
+title: "DAB501 Project #2"
+author: "Kailash Baskar 0790883"
+output:
+  html_document:
+    df_print: paged
+---
+
+### Academic Integrity
+
+I Kailash Baskar, hereby state that I have not communicated with or gained information in any way from any person or resource that would violate the College's academic integrity policies, and that all work presented is my own. In addition, I also agree not to share my work in any way, before or after submission, that would violate the College's academic integrity policies.
+
+### Data set
+
+<https://www.kaggle.com/ankitverma2010/ecommerce-customer-churn-analysis-and-prediction>
+
+#### Loading the data
+
+Installing the required packages.
+
+```{r}
+install.packages("tidyverse", repos = "https://cran.rstudio.com")
+library(tidyverse)
+library(dplyr)
+
+```
+
+Loading the dataset.
+
+```{r}
+library(readxl)
+E_Commerce_Dataset <- read_excel("C:\\Users\\Kailash Baskar\\Desktop\\R_DAB501\\DAB501\\Docs\\E_Comm\\E Commerce Dataset.xlsx", sheet = "E Comm")
+View(E_Commerce_Dataset)
+ 
+edata <- E_Commerce_Dataset
+glimpse(edata)
+```
+
+### Univariant Analysis
+
+#### Numeric Data
+
+For the Numeric Univariant Analysis we take the variable "***CashbackAmount***" as our data.
+
+Calculating **Mean** and **Median** for the variable.
+
+```{r}
+summary(edata$CashbackAmount)
+cash_mean = mean(edata$CashbackAmount)
+cash_mean
+cash_median = median(edata$CashbackAmount)
+cash_median
+```
+
+-   ***Create an appropriate plot to visualize the distribution of this variable.***
+
+Visualizing the variable "***CashbackAmount***" distribution.
+
+```{r}
+ggplot(edata, aes(CashbackAmount)) + geom_histogram(binwidth = 11, color="black", fill="skyblue") + geom_vline(xintercept = cash_mean, linetype="longdash", color="red")  + geom_vline(xintercept = cash_median, color="black") + labs(x="Cash back amount", y="Count of Cash back amount")
+```
+
+-   ***Consider any outliers present in the data. If present, specify the criteria used to identify them and provide a logical explanation for how you handled them.***
+
+Checking for possible outliers
+
+```{r}
+ t1 <- edata %>% filter(CashbackAmount <= 0)
+ t1
+```
+
+There are 4 entries with 0 cashbackamount value with multiple coupons used, this might be due to a different type of coupon used on the order which does not involve cashback.
+
+-   ***Describe the shape and skewness of the distribution.***
+
+Shape and Skewness
+
+```{r}
+ggplot(edata, aes(CashbackAmount)) + geom_histogram(binwidth = 11, color="black", fill="skyblue") + geom_vline(xintercept = cash_mean, linetype="longdash", color="red")  + geom_vline(xintercept = cash_median, color="black")  + labs(x="Cash back amount", y="Count of cash back amount")
+
+summary(edata$CashbackAmount)
+```
+
+On looking at the summary data and the plot looks like the data is right skewed and as it has few high bars and as it not uniform it looks slightly like a multimodel modality.
+
+-   ***Based on your answer to the previous question, decide if it is appropriate to apply a transformation to your data. If no, explain why not. If yes, name the transformation applied and visualize the transformed distribution***
+
+As the data is not extremely skewed, this data sample does not need any Transformation.
+
+-   ***Choose and calculate an appropriate measure of central tendency***
+
+As the data is skewed Mean is the right measure to calculate central tendency.
+
+-   ***Explain why you chose this as your measure of central tendency. Provide supporting evidence for your choice***
+
+```{r}
+summary(edata$CashbackAmount)
+```
+
+The data is right skewed i.e there are very less data lesser than that of Median and as the distribution is not uniform the variance and standard deviation calculation would not result in the proper central tendency value.
+
+-   ***Choose and calculate a measure of spread that is appropriate for your chosen measure of central tendency. Explain why you chose this as your measure of spread.***
+
+The spread of the variable is mainly towards the median area where most of the observations live within an Interquatile range of 50.
+
+```{r}
+summary(edata$CashbackAmount)
+IQR(edata$CashbackAmount)
+```
+
+#### Categorical variable
+
+For this exercise we take the variable "***PreferedOrderCat***" as our data.
+
+-   ***Create an appropriate plot to visualize the distribution of counts for this variable***
+
+```{r}
+ggplot(edata, aes(PreferedOrderCat)) + geom_bar(aes(fill=PreferedOrderCat), show.legend=FALSE) + labs(x="Preferror Order Category", y="Count of preferred orders")
+
+```
+
+-   ***Create an appropriate plot to visualize the distribution of proportions for this variable.***
+
+```{r}
+ggplot(edata) + geom_bar(aes(PreferedOrderCat, y=..prop.., group=1), stat='count', fill="skyblue", color="white") + labs(x="Preferred order category", y="Proportion")
+```
+
+-   ***Discuss any unusual observations for this variable.***
+
+There are no major unusual observation recorded for this variable.
+
+```{r}
+examine <- edata %>% select(PreferedOrderCat) %>% group_by(PreferedOrderCat) %>% summarise(count = n()) %>% mutate(prop = count / sum(count)) %>% mutate(percent_of_total = (count / sum(count) * 100 ))
+
+examine
+```
+
+-   ***Discuss if there are too few/too many unique values.***
+
+```{r}
+unique(edata$PreferedOrderCat)
+```
+
+In total there are 6 unique values available for this variable it is considered as a good number of unique value for this variable.
+
+### Bivariate Analysis
+
+Let's select and clean the data.
+
+Four this exercise the variables ***MaritalStatus, CashbackAmount and Tenure*** are selected.
+
+```{r}
+bi_c <- edata %>% select(MaritalStatus, CashbackAmount, Tenure) %>% drop_na(MaritalStatus, CashbackAmount, Tenure)
+```
+
+#### Two numerical data
+
+-   ***Create an appropriate plot to visualize the relationship between the two variables.***
+
+```{r}
+ggplot(bi_c, aes(Tenure, CashbackAmount)) + geom_point() + geom_smooth(method="lm", formula = y ~ x) + labs(x="Customer Tenure", y="Cashback amount")
+
+```
+
+-   ***Describe the form, direction, and strength of the observed relationship. Include both qualitative and quantitative measures, as appropriate.***
+
+Positive, Strong and Moderately Linear.
+
+The points have a positive trend and though there are few outliers, the points are not spread completely around the plot. Most observations stays close together and as most of the points in lower tenure period has closer observations than higher tenure the graph is moderately linear.
+
+Clearing out outliers for better visualization
+
+```{r}
+bi_1 <- bi_c %>% select(CashbackAmount, Tenure) %>% filter(between(Tenure, 0, 40)) %>% filter(between(CashbackAmount, 100, 400))
+
+ggplot(bi_1, aes(Tenure, CashbackAmount)) + geom_point() + geom_smooth(method="lm", formula= y ~ x) + labs(x="Customer Tenure", y="Cashback amount")
+```
+
+-   ***Explain what this relationship means in the context of the data***
+
+This means that the data between Tenure and CashbackAmount has strong relationship.
+
+As the customer Tenure increases the CashbackAmount claimed by the customer also increases.
+
+-   ***Describe the variability that you observe in the plot and how that corresponds to the strength you calculated in \#2 above.***
+
+```{r}
+mean(bi_c$Tenure)
+sd(bi_c$Tenure)
+
+mean(bi_c$CashbackAmount)
+sd(bi_c$CashbackAmount)
+
+summary(bi_c$CashbackAmount)
+summary(bi_c$Tenure)
+```
+
+When comparing the Median and the IQR range for both the variables it is clear that CashbackAmount variable has a strong relationship with the Tenure and they both are positively related to each other.
+
+#### One Numeric and one categorical
+
+-   ***Create an appropriate plot to visualize the relationship between the two variables.***
+
+```{r}
+ggplot(bi_c, aes(MaritalStatus, CashbackAmount)) + geom_boxplot(aes(fill=MaritalStatus), show.legend = FALSE) + labs(x="MaritalStatus of customer", y="Cashback amount")
+```
+
+-   ***Describe the form, direction, and strength of the observed relationship. Include both qualitative and quantitative measures, as appropriate.***
+
+Though there are few suspected outliers the median lies closer to the middle of the IQR range for all the MaritalStatus types of people. \
+The form appears to be strong as all the category has the median almost closer to the middle of IQR and have a linear and has a neither positive nor negative direction considering the median.
+
+-   ***Explain what this relationship means in the context of the data***
+
+From the plot and the context of data we could see that the Divorsed users had got the maximum average of cashback amount and also has the highest IQR of cashback among the other category of users.
+
+-   ***Describe the variability that you observe in the plot and how that corresponds to the strength you calculated in \#2 above.***
+
+```{r}
+tapply(bi_c$CashbackAmount, bi_c$MaritalStatus, mean)
+
+tapply(bi_c$CashbackAmount, bi_c$MaritalStatus, sd)
+
+tapply(bi_c$CashbackAmount, bi_c$MaritalStatus, IQR)
+```
+
+The mean CashbackAmount for the Divorced peopleis higher when compared to the other two user category also the measure of spread is large on that user category.
+
+Though the means for other user vary slightly they all lie around the middle of the IQR range and thus exhibit a strong relationship. Though single users has the lease when compared to others two category they have the closest measure of spread when compared to other two user category.
+
+### References
+
+<https://www.westga.edu/academics/research/vrc/assets/docs/scatterplots_and_correlation_notes.pdf>
+
+<https://lms.stclaircollege.ca/bbcswebdav/pid-2273873-dt-content-rid-26842374_1/courses/DAB501-21F-001002003004/R4DS_Chapter_7b_soln.html>
+
+<https://lms.stclaircollege.ca/webapps/blackboard/execute/content/file?cmd=view&content_id=_2263843_1&course_id=_49673_1>
+
+<https://runestone.academy/runestone/books/published/ac1/scatter_plots_and_correlation/describing_scatter_plots.html>

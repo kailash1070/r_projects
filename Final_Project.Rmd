@@ -1,0 +1,86 @@
+---
+title: "Project Proposal"
+author: "Kailash Baskar - W0790883"
+output:
+  html_document:
+    df_print: paged
+    code_folding: hide
+---
+
+## ***Project Proposal***
+
+In this project we are going to explore the German credit risk data and predict which customers has the best possibility to return back the credit i.e a good loan and which customers has the least possibility to return back the credit.
+
+#### ***Section 1 - Introduction:***
+
+German credit risk data is a very interesting data which is obtained from a very confidential German financial data source to predict and to catch the customers who has the lease probability of returning back a credit to the bank. In this data set, each entry indicates a bank customer who takes a credit from a bank. From analyzing the given attributes in the data each customer's loan is identified as whether it is good or bad loan.
+
+The project problem/research statement is to analyse the available variables and identify which attribute is important in predicting the credit risk and which customer with the right attributes should be given a credit from the bank. Also to create a model which will help predict whether a customer with various attributes will repay the loan i.e have a less or no credit risk associated with him.
+
+The data set which is used in this project is selected from Kaggle and it is available in this link [link_to_data_set](https://www.kaggle.com/kabure/german-credit-data-with-risk){.uri}.
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(Hmisc)
+library(here)
+library(readr)
+gd <- read_csv("./data/german_credit_data.csv")
+```
+
+The data set has 1000 observations and 11 variables in it. Below are the available variables in the data set and its type.
+
+-   Age (numeric)
+
+-   Sex (text: male, female)
+
+-   Job (numeric: 0 - unskilled and non-resident, 1 - unskilled and resident, 2 - skilled, 3 - highly skilled)
+
+-   Housing (text: own, rent, or free)
+
+-   Saving accounts (text - little, moderate, quite rich, rich)
+
+-   Checking account (numeric, in DM - Deutsch Mark)
+
+-   Credit amount (numeric, in DM)
+
+-   Duration (numeric, in month)
+
+-   Purpose (text: car, furniture/equipment, radio/TV, domestic appliances, repairs, education, business, vacation/others
+
+```{r}
+dim(gd)
+spec(gd)
+```
+
+#### ***Section 2 - Data analysis plan:***
+
+-   The main plan is to predict which and what customer attributes contribute in making a loan good or bad.
+
+-   The dependent variable "Risk" is to be compared with other predictor variables like Age, Duration and others for this project.
+
+-   The summary of this data set is mentioned below and also plotted a histogram graph to identify the distribution of the variables in the data set. The first variable is just the serial number and has to be removed, and there are some NA values in "Savings accounts" and "Checking account" variables will try to fill these observations with relevant values.
+
+    ```{r}
+    summary(gd)
+    hist.data.frame(gd)
+    apply(is.na(gd),2,sum)
+    ```
+
+-   The statistical methods used in this project are "IQR, correlation, lm, glm, summary, mean, and median".
+
+-   Using the above mentioned statistical methods various statistical data are found from the variable in the dataset, also a couple of regression models are created with the available variables which will help in predicting if customer is a credit risky customer or not.
+
+#### ***Section 3 - Data:***
+
+The data is placed in `/data` folder. Glimpse of the data
+
+```{r}
+glimpse(gd)
+
+```
+
+#### *References:*
+
+<https://www.tutorialspoint.com/how-to-create-histogram-of-all-columns-in-an-r-data-frame>
+
+<https://stackoverflow.com/questions/8317231/elegant-way-to-report-missing-values-in-a-data-frame>

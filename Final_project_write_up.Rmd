@@ -1,0 +1,284 @@
+---
+title: "Final Project Write Up"
+author: "Kailash Baskar - W0790883"
+output:
+  html_document:
+    css: "test.css"
+    df_print: paged
+    code_folding: hide
+---
+
+### ***Project***
+
+This project is about exploring the famous German credit risk data set and provide insights on whether a particular customer's credit is a good one or bad.
+
+#### ***Write up***
+
+#### ***Introduction***
+
+The German credit data is the information collected from random 1000 customers about various attributes such as Credit amount, amount which is currently in their savings and checking account, their reason to avail credit from bank, tenure period of the credit and some personal information including age, sex, their occupation and whether they have their own house or not.
+
+With these available information the project is intended to predict and showcase the relationship between the available attributes in the data and to check which customer's credit is at Risk or not.
+
+Also as part of this project using various regression techniques a new model will be created which helps whether a customer with the existing attributes will be a good credit candidate i.e will be paying back the credit on time or is there any risk associated in approving the loan to him.
+
+##### ***Analysis:***
+
+##### ***Loading the data required libraries:***
+
+Let's load the data set and explore the variables in it.
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(Hmisc)
+library(patchwork)
+library(corrplot)
+library(Amelia)
+library(here)
+library(readr)
+gd <- read_csv("./data/german_credit_data.csv")
+```
+
+##### ***Exploratory data analysis***
+
+In Exploratory data analysis we shall explore how wide spread the data is and also do the required cleanup and transformation and perform the required analysis.
+
+Dimension of the data set.
+
+```{r}
+dim(gd)
+```
+
+Let's have a glimpse of data set to ensure if all the variables are needed for our analysis.
+
+```{r}
+glimpse(gd)
+```
+
+##### ***Data cleaning and transformation***
+
+From the data looks like the first column is just Serial numbers and it would not be useful for our analysis, hence removing the first column in the data set.
+
+```{r}
+gd <- gd %>% select(!...1)
+head(gd, n=2)
+```
+
+Let's check if there are any missing values in any variables in it.
+
+```{r , warning=FALSE}
+apply(is.na(gd),2,sum)
+missmap(gd)
+```
+
+From the above graph we could see the variables `Checking account` and `Savings account` has multiple `NA` values in it.
+
+Calculating the percentage of NA values to see if it is less than 5% then we can remove those observations.
+
+```{r, warning=FALSE}
+print("NA count for Saving accounts")
+apply(is.na(gd['Saving accounts']), 2, sum)/count(gd[1])*100
+print("NA count for Saving accounts")
+apply(is.na(gd['Checking account']), 2, sum)/count(gd[1])*100
+```
+
+Looks like the NA values contribute to a higher percentage of data. So replacing the `NA` observations to some value to make the data useful for our analysis.
+
+Replacing the value "NO" for the observations which has "NA" in Savings and Checking account variables.
+
+```{r, warning=FALSE}
+gd['Saving accounts'][is.na(gd['Saving accounts'])] <- "NO"
+gd['Checking account'][is.na(gd['Checking account'])] <- "NO"
+```
+
+```{r, warning=FALSE}
+count(gd, gd$`Saving accounts`)
+count(gd, gd$`Checking account`)
+```
+
+Replaced the "NA" values to "NO" to indicate there is no savings or checking account for that customer.
+
+To check the correlation of these account types lets map them to a numerical value to find correlation with other variables.
+
+```{r, warning=FALSE}
+gd <- gd %>% mutate(savings_numeric=as.numeric(factor(gd$`Saving accounts`)))
+gd <- gd %>% mutate(credit_numeric=as.numeric(factor(gd$`Credit amount`)))
+```
+
+Also mutating other relavent information into numeric values to calculate correlation.
+
+```{r, warning=FALSE}
+gd <- gd %>% mutate(Sex_num = as.numeric(factor(gd$Sex))) %>% mutate(Risk_num = as.numeric(factor(gd$Risk))) %>%  mutate(Housing_num = as.numeric(factor(gd$Housing))) %>% mutate(Purpose_num = as.numeric(factor(gd$Purpose)))
+```
+
+The current data set which we have after cleaning and transforming some of the variables.
+
+```{r, warning=FALSE}
+head(gd,2)
+```
+
+##### ***Analysis:***
+
+Plotting the variable helps in identification of their measure of spread, central tendency and other important features.
+
+##### ***Univariant Analysis:***
+
+First let's explore the numerical variables Age and Credit Amount.
+
+```{r, warning=FALSE}
+p1 <- ggplot(gd, aes(gd$Age)) + geom_histogram(binwidth = (max(gd$Age) - min(gd$Age))/30, color="white", fill="skyblue" ) + geom_vline(xintercept = mean(gd$Age), color="red", size=2) + geom_vline(xintercept = median(gd$Age), color="green", size=2) + labs(x="Age", y="Count of age", title="Age distribution among customers")
+
+p2 <- ggplot(gd, aes(gd$`Credit amount`)) + geom_histogram(binwidth = (max(gd$`Credit amount`) - min(gd$`Credit amount`))/30, color="white", fill="skyblue" ) + geom_vline(xintercept = mean(gd$`Credit amount`), color="red", size=2) + geom_vline(xintercept = median(gd$`Credit amount`), color="green", size=2) + labs(x="Credit amount", y="Count of Credit amount", title="Credit amount distribution")
+```
+
+```{r, warning=FALSE}
+p1 + p2
+```
+
+The red line indicates the mean and green line indicates the median.
+
+Both the graphs indicate the variables are right skewed and unimodel.
+
+The measure of spread of these variables are displayed below.
+
+```{r, warning=FALSE}
+print("IQR for Age")
+IQR(gd$Age)
+print("IQR for credit amount")
+IQR(gd$`Credit amount`)
+```
+
+##### ***Bivariant Analysis:***
+
+Exploring other variables to check their distribution. The variable Job indicates the job category, using visualization plotting the bar graph along with Sex as distribution.
+
+```{r, warning=FALSE}
+ggplot(gd, aes(Job)) + geom_bar(aes(fill=Sex)) + labs(x="Job category", y="Count of Jobs", title="Job category distribution")
+```
+
+From the graph it looks like there are more customers working in Job Category "2" and in all the categories the male customers are more than female customers.
+
+Finding out which gender has the most credit amount.
+
+```{r, warning=FALSE}
+ggplot(gd, aes(`Credit amount`, Sex)) + geom_boxplot(aes(fill=Sex)) + labs(x="Credit amount", y="Sex", title="Gender wise credit amount distribution")
+```
+
+From the graph it looks like though credit amount for females is less than males there are few female customers with high credit amount.
+
+Let's check the distribution of good and bad loans by sex.
+
+```{r, warning=FALSE}
+ggplot(gd,aes(x=Risk, fill=Sex)) + geom_bar(position='dodge') + labs(x="Risk", y="Count of loans", title="Risk measure by gender")
+```
+
+From the graph it looks like more male customers are having a positive good risk score when compared to the females and looks like there are more risk associated with female customers.
+
+A plot to compare credit amount with the purpose of credit.
+
+```{r, warning=FALSE}
+ggplot(gd, aes(x=Purpose, y=gd$`Credit amount`, fill=Sex)) + geom_boxplot() + coord_flip() + labs(x="Credit amount", y="Purpose of credit", title="Distrubution of credit amounts on various products")
+```
+
+Looks like customers are taking more credit towards vacation and other activities more when compared with the other purposes of credit and to be specific Females take the most loans for vacation when compared with Males.
+
+Let's find the distribution of customers Age with their credit amount received from bank.
+
+```{r, warning=FALSE}
+ggplot(gd, aes(gd$Age, gd$`Credit amount`)) + geom_col(fill="blue") + labs(x="Age", y="Credit amount", title="Credit amount for different age groups")
+```
+
+From the graph it looks like customers in the age range of 23-40 has received the most credit amount when compared to the other age people.
+
+Comparing credit amount with the customer's house variable, to ensure if there are more loans given for customers with house or not.
+
+```{r, warning=FALSE}
+ggplot(gd, aes(gd$Housing, gd$`Credit amount`)) + geom_col(aes(fill=Risk), show.legend = TRUE) + labs(x="Housing", y="Credit Amount", title="Credit amount with housing type")
+```
+
+Looks like customers with own house has received the most credit when compared to the other customers and also the risk factor is considerably low for the customer who owns a house.
+
+Lets find the distrubution about how much duration varies with various credit amounts received by the customers.
+
+```{r, warning=FALSE}
+ggplot(gd, aes(gd$Duration, gd$`Credit amount`)) + geom_point() + geom_smooth(method=lm, se=FALSE) + labs(x="Duration", y="Credit Amount", title="Credit Amount vs Duration")
+```
+
+From the above graph it is clear that as the duration increases the credit amount also increases i.e in other words the larger the credir amount the longer the credit duration.
+
+Let's find the correlation between the different variables with Risk to identify which variable correlates to the most risk value.
+
+```{r, warning=FALSE}
+print("Correlation of Age and Risk")
+cor(gd$Age, gd$Risk_num)
+print("Correlation of Credit Amount and Risk")
+cor(gd$`Credit amount`, gd$Risk_num)
+print("Correlation of Duration and Risk")
+cor(gd$Duration, gd$Risk_num)
+```
+
+From the correlation values looks like the Duration and Credit amount are negatively correlated to the risk factor. As the duration of the loan tenure increases the credit is supposed to be a good loan and similarly as the credit amount increases the loan is a good loan.
+
+Some statistical calculation to find out which category of customers with various housing and Job type has got the most credit amount from the bank and their average age and duration of the loan.
+
+```{r, warning=FALSE}
+print("Summary of mean grouped by House category")
+gd %>% group_by(Housing) %>% summarise(mean(`Credit amount`), mean(Age), mean(Duration))
+print("Summary of mean grouped by Job category")
+gd %>% group_by(Job) %>% summarise(mean(`Credit amount`), mean(Age), mean(Duration))
+```
+
+From the obtained information it looks like the people who are in free houses has got the most credit from the bank when compared to the Own house owners or rental people. The People in the free house category are also little old when compared to the other category people and they got a larger loan duration as well.
+
+Similarly people who are belong and are working in job category 3 has got the maximul credit amount from the bank and also has the second highest age when compared with others and with the highest loan duration.
+
+##### ***Linear model:***
+
+Lets create a small linear model comparing Age with the credit amount.
+
+```{r, warning=FALSE}
+summary(lm(gd$Risk_num~gd$`Credit amount`, data=gd))
+```
+
+So the least square for this regression model can be written as "r = 1.782 + (-2.513e-05) \* Credit Amount" So 2.3% of the Risk variability is being explained by Credit Amount
+
+Let's extend this model for multiple variables to predict the risk.
+
+Creating a model with all the variables to check if they correlate to the Risk factor.
+
+```{r, warning=FALSE}
+summary(lm( gd$Risk_num ~ as.numeric(gd$Job) + gd$Age + gd$Duration + gd$Purpose_num + gd$Sex_num + gd$savings_numeric + gd$credit_numeric + gd$Housing_num + gd$`Credit amount`, data=gd))
+```
+
+From the above summary statistics looks like the Risk factor prediction can be 11.1% accurate from the model which we have created by summing up all the variables.
+
+Let's create a new model with a product of all these variables.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+summary(lm( gd$Risk_num ~ as.numeric(gd$Job) * gd$Age * gd$Duration * gd$Purpose_num * gd$Sex_num * gd$savings_numeric * gd$credit_numeric * gd$Housing_num + gd$`Credit amount`, data=gd))
+```
+
+"summary(lm( gd\$Risk_num \~ as.numeric(gd\$Job) \* gd\$Age \* gd\$Duration \* gd\$Purpose_num \* gd\$Sex_num \* gd\$savings_numeric \* gd\$credit_numeric \* gd\$Housing_num + gd\$\`Credit amount\`, data=gd))"
+
+\#Turned off the message output for second model as the output is lengthy and takes up more page space.
+
+From the second model which we have created the R squared value is 0.3635 so about 36.3% of the data which will be fed into this model will predict the results accurately and help the bank in identifying a good customer to give credit without any hesitation.
+
+#### ***Conclusion***
+
+Overall there were multiple parameters in the data set about the customer which indicated some of the customer's personal information as well as banking related information. We have performed extensive exploratory data analysis on continuous and categorical variable both univarent and bivarent analysis and identified some interesting aspects from the data.
+
+We have compared all the variables and looking at their distribution and correlation with other variables using various plots and statistical approaches we could see that customers within age group of 23 - 40 has taken the most amount of credit from the bank. Mostly female customers are at a potentially high credit risk and banks should review their credit application before proceeding further. In the same context customers with job category 3 has achieved the maximum credit from the bank and on an average their age are in the mid 40. The most credit has been given to vacations and other expenses were females were the most to claim the credit for this purpose.
+
+On the other hand the credit amount with longer tenure has a very low risk factor associated with it. There is also a relation between the duration and amount where higher the credit amount higher the duration and lower the risk factor. From the available data looks like customers who has free house has claimed the most credit amount from the bank when compared to the other customer types.
+
+As part of the project analysis we also calculated the IQR and correlation for various numeric variables and in the data there were many categorical variables which had a key role in calculating the credit risk factor, so converted the categorical data into numeric values and found the correlation with the risk factor. As expected the savings account variable had a very good correlation with the credit risk factor. Similarly the duration of the credit and age had a negative impact to the correlation of the risk factor which opened up new vision to the bank management.
+
+A couple of models to predict the risk factors were also created as part of the project and these model outputs are compared against each other. On comparison the second model where the product of the variables helped to identify the risk factor by 36.35% accuracy and served a better model when compared with the first model where sum of the independent variables are used to predict the dependent variable Risk. Using this model we can inject new customer attributes and predict whether the customer is going to be a good credit risky customer or not.
+
+To conclude, by extensive exploratory data analysis and linear model outputs we were able to find some interesting variables about the bank credits and also created a model to predict the risk factor of the future customers.
+
+#### ***References***
+
+<https://www.rdocumentation.org/packages/Amelia/versions/1.8.0/topics/missmap> <https://njtierney.github.io/r/missing%20data/rbloggers/2015/12/01/ggplot-missing-data/> [[https://www.geeksforgeeks.org/convert-factor-to-numeric-and-numeric-to-factor-in-r-programming/](https://www.geeksforgeeks.org/convert-factor-to-numeric-and-numeric-to-factor-in-r-programming/￼DAB501)\
+DAB501](https://www.geeksforgeeks.org/convert-factor-to-numeric-and-numeric-to-factor-in-r-programming/){.uri} study materials and LAB contents
