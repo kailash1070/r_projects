@@ -1,5 +1,5 @@
 # r_projects
-All the R projects and works.
+All R programming data analytics projects and work.
 
 **Project 1:** Forbes 2000 (2004) data set.
 
